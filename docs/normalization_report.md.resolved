@@ -1,0 +1,62 @@
+# Database Design & Normalization Report
+
+## 1. Introduction
+This report documents the design process for a university course management system. The goal was to store data regarding students, professors, courses, and enrollments in a structure that minimizes redundancy and ensures data integrity.
+
+## 2. Initial State: The "Bad" Schema (1NF)
+To demonstrate the need for normalization, let us consider a naive, flat design often used in spreadsheets:
+
+**Table:** `UniversitySemesterLog`
+*   **Columns**: `StudentName`, `StudentEmail`, `CourseTitle`, `ProfessorName`, `ProfessorEmail`, `Credits`, `Grade`, `EnrollmentDate`
+*   **Key**: (`StudentEmail`, `CourseTitle`)
+
+### Why this is only 1NF
+This table is in **First Normal Form (1NF)** because all attributes contain atomic values (no lists of courses in a single cell). However, it suffers from significant issues:
+
+1.  **Redundancy**: If a student enrolls in 5 courses, their name and email are repeated 5 times. If a professor teaches 3 courses, their details are repeated.
+2.  **Update Anomalies**: If "Dr. Emily White" changes her email, we must update strictly *all* rows where she appears. Missing one leads to inconsistent data.
+3.  **Insertion Anomalies**: We cannot record a new course without having at least one student enrolled in it (because the primary key involves `StudentEmail`).
+4.  **Deletion Anomalies**: If the last student drops a course, we lose all record of that course and its professor.
+
+This design violates **2NF** (Partial Dependencies) and **3NF** (Transitive Dependencies).
+*   *Partial Dependency*: `ProfessorName` depends only on `CourseTitle`, not the full PK (Student+Course).
+*   *Transitive Dependency*: `ProfessorEmail` depends on `ProfessorName` (or ID), not directly on the Course.
+
+## 3. Transformation to 3NF
+
+To solve these problems, we decomposed the data into three normalized relations.
+
+### Step 1: Extract Users (AppUsers)
+We removed student and professor personal details into a dedicated table.
+*   **Table**: `AppUsers`
+*   **Columns**: `user_id` (PK), `full_name`, `email`, `role`
+*   **Benefit**: User data is stored once. A user's email update happens in one place.
+
+### Step 2: Extract Courses (Courses)
+We separated course definitions from enrollments.
+*   **Table**: `Courses`
+*   **Columns**: `course_id` (PK), `title`, `description`, `credits`, `professor_id` (FK)
+*   **Benefit**: A course exists independently of students. We can add a course with no enrollments.
+    *   *Note*: We assigned `professor_id` here. This presumes a course is taught by one professor (1:N). If multiple professors teach one course, we would need a fourth table `CourseInstructors`. For this assignment, 1:N was chosen.
+
+### Step 3: The Association Table (Enrollments)
+We created a link between Students and Courses to handle the Many-to-Many relationship.
+*   **Table**: `Enrollments`
+*   **Columns**: `enrollment_id` (PK), `student_id` (FK), `course_id` (FK), `grade`
+*   **Benefit**: This table contains only data specific to the *act of enrolling* (the grade and date).
+
+### Final 3NF Justification
+*   **1NF**: All fields are atomic.
+*   **2NF**: All non-key attributes depend on the *whole* primary key. In `Enrollments`, `grade` depends on *both* Student and Course. In `Courses`, `credits` depends on the `course_id`.
+*   **3NF**: No transitive dependencies. `email` depends only on `user_id`. `title` depends only on `course_id`.
+
+## 4. Constraints and Views
+
+### Constraints
+*   **Referential Integrity (FKs)**: `Enrollments` cannot reference non-existent students or courses. `ON DELETE CASCADE` ensures that if a student is removed, their academic record is effectively cleaned up (or archived, though here we chose physical deletion for simplicity).
+*   **Domain Constraints**: `CHECK (grade BETWEEN 1 AND 10)` ensures invalid grades (e.g., -5 or 11) cannot be entered.
+*   **Uniqueness**: `UNIQUE (student_id, course_id)` prevents a student from enrolling in the same course twice in the same context.
+
+### Views
+1.  **`TranscriptView`**: Reconstructs the human-readable report by joining the three normalized tables. This proves that normalization did not lose information; it just structured it better.
+2.  **`CoursePerformanceView`**: Demonstrates the power of SQL aggregation (`AVG`, `COUNT`) which is much harder to do efficiently on the flat 1NF spreadsheet structure.

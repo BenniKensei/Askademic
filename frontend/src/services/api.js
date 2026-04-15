@@ -2,6 +2,12 @@ import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:8080/api';
 
+/**
+ * Shared axios client for authenticated backend calls.
+ * Why:
+ * A single instance centralizes auth header injection and unauthorized handling,
+ * preventing subtle differences across service modules.
+ */
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -34,6 +40,8 @@ api.interceptors.response.use(
       sessionStorage.removeItem('token');
       window.location.href = '/login';
     }
+    // # TODO: add refresh-token flow before forced logout for short-lived access tokens.
+    // # FIXME: avoid hard redirect when an in-flight form submission should preserve draft state.
     return Promise.reject(error);
   }
 );

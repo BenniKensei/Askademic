@@ -23,8 +23,11 @@ import com.eduhub.service.QuestionService;
 import jakarta.validation.Valid;
 
 /**
- * REST Controller for Question management.
- * Delegates business logic to QuestionService.
+ * REST controller for course question flows.
+ *
+ * Why:
+ * The controller remains thin on purpose and delegates domain rules to
+ * QuestionService so authorization and grouping logic stay testable in one place.
  */
 @RestController
 @RequestMapping("/api/questions")
@@ -36,6 +39,15 @@ public class QuestionController {
         this.questionService = questionService;
     }
 
+    /**
+     * GET /api/questions/course/{courseId}
+     *
+     * Contract:
+     * - Auth: PROFESSOR or STUDENT
+     * - Query: optional filter in {answered, unanswered}
+     * - Response: List<Question>
+     * - Status: 200, 401, 403
+     */
     @GetMapping("/course/{courseId}")
     @PreAuthorize("hasAnyRole('PROFESSOR', 'STUDENT')")
     public ResponseEntity<List<Question>> getQuestionsByCourse(
@@ -46,6 +58,15 @@ public class QuestionController {
         return ResponseEntity.ok(questions);
     }
 
+    /**
+     * POST /api/questions
+     *
+     * Contract:
+     * - Auth: PROFESSOR or STUDENT
+     * - Request body: QuestionRequest { title, content, courseId, anonymous }
+     * - Response: Question
+     * - Status: 200, 400, 401, 403, 404
+     */
     @PostMapping
     @PreAuthorize("hasAnyRole('PROFESSOR', 'STUDENT')")
     public ResponseEntity<Question> createQuestion(
@@ -56,6 +77,14 @@ public class QuestionController {
         return ResponseEntity.ok(savedQuestion);
     }
 
+    /**
+     * DELETE /api/questions/{id}
+     *
+     * Contract:
+     * - Auth: PROFESSOR or STUDENT
+     * - Response: no body
+     * - Status: 200, 401, 403, 404
+     */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('PROFESSOR', 'STUDENT')")
     public ResponseEntity<Void> deleteQuestion(
@@ -67,13 +96,17 @@ public class QuestionController {
     }
     
     /**
-     * Get questions grouped by semantic similarity.
-     * Returns groups of similar questions with their similarity scores.
-     * Only works in AI mode (app.ai.enabled=true with PostgreSQL + pgvector).
-     * 
-     * @param courseId The course ID to get grouped questions from
-     * @param threshold Optional similarity threshold (0.0-1.0, default: 0.3)
-     * @return List of question groups with similarity information
+     * GET /api/questions/grouped/{courseId}
+     *
+     * Contract:
+     * - Auth: PROFESSOR or STUDENT
+     * - Query: threshold (0.0-1.0), default 0.1
+     * - Response: List<QuestionGroupDto>
+     * - Status: 200, 400, 401, 403
+     *
+     * Why:
+     * Threshold stays configurable so professors can trade precision for recall based
+     * on class size and expected wording variation.
      */
     @GetMapping("/grouped/{courseId}")
     @PreAuthorize("hasAnyRole('PROFESSOR', 'STUDENT')")
@@ -85,7 +118,9 @@ public class QuestionController {
         if (threshold < 0.0 || threshold > 1.0) {
             throw new IllegalArgumentException("Threshold must be between 0.0 and 1.0");
         }
-        
+
+        // # TODO: expose the threshold default from configuration to avoid hard-coding in API docs.
+        // # FIXME: return a structured validation payload instead of bubbling IllegalArgumentException.
         List<QuestionGroupDto> groups = questionService.getGroupedQuestions(courseId, threshold);
         return ResponseEntity.ok(groups);
     }

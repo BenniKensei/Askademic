@@ -4,11 +4,21 @@ import { parseErrorMessage } from '../utils/errorMessages';
 
 const AuthContext = createContext();
 
+/**
+ * Hook contract for auth consumers.
+ * Returns the active auth context value (user/token/actions/loading).
+ */
 export const useAuth = () => {
   return useContext(AuthContext);
 };
 
-// Decode JWT token (simple base64 decode without validation)
+/**
+ * Decodes JWT payload for optimistic client-side identity restoration.
+ * Why: keeps route guards and role-based UI responsive after refresh without
+ * requiring a blocking profile call.
+ *
+ * Note: this is not security validation; the backend remains the source of truth.
+ */
 const decodeToken = (token) => {
   try {
     const base64Url = token.split('.')[1];
@@ -28,6 +38,15 @@ const decodeToken = (token) => {
   }
 };
 
+/**
+ * @param {{ children: React.ReactNode }} props
+ * @returns {JSX.Element}
+ *
+ * State rationale:
+ * - user: denormalized auth profile used across navigation/guards.
+ * - token: persisted in sessionStorage to scope login lifetime to browser session.
+ * - loading: prevents early route redirects before token hydration completes.
+ */
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(sessionStorage.getItem('token') || null);
@@ -35,6 +54,9 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Why dependency includes only token:
+    // user is derived state from token payload; recalculating on token transitions
+    // avoids stale role/email data after login/logout.
     if (token) {
       // Decode token to restore user info
       const decoded = decodeToken(token);
@@ -48,6 +70,7 @@ export const AuthProvider = ({ children }) => {
       }
     }
     setLoading(false);
+    // # FIXME: proactively clear expired token instead of waiting for a 401 from API.
   }, [token]);
 
   const login = async (email, password) => {
@@ -60,6 +83,7 @@ export const AuthProvider = ({ children }) => {
       return { success: true };
     } catch (error) {
       const errorMessage = parseErrorMessage(error);
+      // # TODO: add telemetry for repeated login failures to detect credential stuffing.
       return { success: false, message: errorMessage };
     }
   };

@@ -28,6 +28,14 @@ public class SecurityConfig {
         logger.info("Security configuration initialized successfully - JWT filter and auth provider configured");
     }
 
+    /**
+     * Defines stateless JWT-based request security.
+     *
+     * Why:
+     * - CSRF is disabled because the API does not rely on cookie-based sessions.
+     * - Stateless sessions simplify horizontal scaling and avoid server-side session drift.
+     * - Auth routes stay public so clients can bootstrap tokens.
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -50,6 +58,9 @@ public class SecurityConfig {
             // 5. AUTH PROVIDER & FILTER
             .authenticationProvider(authenticationProvider)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
+        // # TODO: tighten permitAll routes when an actuator or API-doc profile is introduced.
+        // # FIXME: add centralized security event audit trail for repeated auth failures.
 
         return http.build();
     }

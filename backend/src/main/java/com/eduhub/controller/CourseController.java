@@ -34,6 +34,19 @@ public class CourseController {
     @Autowired
     private UserService userService;
 
+    /**
+     * POST /api/courses
+     *
+     * Contract:
+     * - Auth: PROFESSOR
+     * - Request body: CourseRequest { name, description }
+     * - Response: Course
+     * - Status: 200, 401, 403, 404
+     *
+     * Why:
+     * Course ownership is attached at creation time so downstream authorization checks
+     * remain simple and deterministic for grading, announcements, and moderation.
+     */
     @PostMapping
     @PreAuthorize("hasAuthority('PROFESSOR')")
     public ResponseEntity<?> createCourse(@Valid @RequestBody CourseRequest request, Authentication authentication) {
@@ -49,6 +62,14 @@ public class CourseController {
         return ResponseEntity.ok(saved);
     }
 
+    /**
+     * GET /api/courses
+     *
+     * Contract:
+     * - Auth: authenticated user
+     * - Response: List<Course>
+     * - Status: 200, 401
+     */
     @GetMapping
     public ResponseEntity<List<Course>> getAllCourses() {
         List<Course> courses = courseService.getAllCourses();
@@ -62,6 +83,14 @@ public class CourseController {
         return ResponseEntity.ok(course);
     }
 
+    /**
+     * GET /api/courses/professor
+     *
+     * Contract:
+     * - Auth: PROFESSOR
+     * - Response: List<Course> owned by current professor
+     * - Status: 200, 401, 403, 404
+     */
     @GetMapping("/professor")
     @PreAuthorize("hasAuthority('PROFESSOR')")
     public ResponseEntity<List<Course>> getProfessorCourses(Authentication authentication) {
@@ -72,6 +101,14 @@ public class CourseController {
         return ResponseEntity.ok(courses);
     }
 
+    /**
+     * POST /api/courses/{id}/enroll
+     *
+     * Contract:
+     * - Auth: STUDENT
+     * - Response: success message
+     * - Status: 200, 401, 403, 404
+     */
     @PostMapping("/{id}/enroll")
     @PreAuthorize("hasAuthority('STUDENT')")
     public ResponseEntity<String> enrollStudent(@PathVariable Integer id, Authentication authentication) {
@@ -83,6 +120,14 @@ public class CourseController {
         return ResponseEntity.ok("Enrolled successfully");
     }
 
+    /**
+     * GET /api/courses/student
+     *
+     * Contract:
+     * - Auth: STUDENT
+     * - Response: List<Course> where current student is enrolled
+     * - Status: 200, 401, 403, 404
+     */
     @GetMapping("/student")
     @PreAuthorize("hasAuthority('STUDENT')")
     public ResponseEntity<List<Course>> getStudentCourses(Authentication authentication) {
@@ -93,6 +138,19 @@ public class CourseController {
         return ResponseEntity.ok(courses);
     }
 
+    /**
+     * PUT /api/courses/{id}/grading
+     *
+     * Contract:
+     * - Auth: PROFESSOR
+     * - Request body: raw grading guide text
+     * - Response: updated Course
+     * - Status: 200, 401, 403, 404
+     *
+     * Why:
+     * This explicit ownership check prevents professors from modifying grading policies
+     * for courses they do not own even if they hold a global PROFESSOR role.
+     */
     @PutMapping("/{id}/grading")
     @PreAuthorize("hasAuthority('PROFESSOR')")
     public ResponseEntity<Course> updateGradingInfo(
@@ -116,6 +174,15 @@ public class CourseController {
         return ResponseEntity.ok(updated);
     }
 
+    /**
+     * POST /api/courses/enroll-by-code
+     *
+     * Contract:
+     * - Auth: STUDENT
+     * - Request body: plain string courseCode
+     * - Response: success message
+     * - Status: 200, 400, 401, 403, 404
+     */
     @PostMapping("/enroll-by-code")
     @PreAuthorize("hasAuthority('STUDENT')")
     public ResponseEntity<String> enrollByCode(@RequestBody String courseCode, Authentication authentication) {
@@ -127,6 +194,14 @@ public class CourseController {
         return ResponseEntity.ok("Enrolled successfully");
     }
 
+    /**
+     * DELETE /api/courses/{id}
+     *
+     * Contract:
+     * - Auth: PROFESSOR or ADMIN
+     * - Response: no body
+     * - Status: 200, 401, 403, 404
+     */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('PROFESSOR', 'ADMIN')")
     public ResponseEntity<Void> deleteCourse(

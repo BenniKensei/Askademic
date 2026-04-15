@@ -85,6 +85,18 @@ public class AnswerController {
         this.userRepository = userRepository;
     }
 
+    /**
+     * GET /api/answers/question/{questionId}
+     *
+     * Contract:
+     * - Auth: PROFESSOR or STUDENT
+     * - Response: List<Answer> ordered by verified desc then createdAt asc
+     * - Status: 200, 401, 403
+     *
+     * Why:
+     * Verified answers are prioritized so students see instructor-approved guidance first,
+     * while chronological order preserves discussion context.
+     */
     @GetMapping("/question/{questionId}")
     @PreAuthorize("hasAnyRole('PROFESSOR', 'STUDENT')")
     public ResponseEntity<List<Answer>> getAnswersByQuestion(@PathVariable Long questionId) {
@@ -92,6 +104,15 @@ public class AnswerController {
         return ResponseEntity.ok(answers);
     }
 
+    /**
+     * POST /api/answers
+     *
+     * Contract:
+     * - Auth: PROFESSOR or STUDENT
+     * - Request body: AnswerRequest { questionId, content, anonymous }
+     * - Response: Answer
+     * - Status: 200, 400, 401, 403, 404
+     */
     @PostMapping
     @PreAuthorize("hasAnyRole('PROFESSOR', 'STUDENT')")
     public ResponseEntity<Answer> createAnswer(
@@ -106,6 +127,7 @@ public class AnswerController {
 
         Answer answer = new Answer(request.getContent(), author, question);
         answer.setAnonymous(request.isAnonymous());
+        // # TODO: add mention/notification fan-out when answers are posted by professors.
         return ResponseEntity.ok(answerRepository.save(answer));
     }
 
@@ -164,9 +186,18 @@ public class AnswerController {
             createdAnswers.add(answerRepository.save(answer));
         }
 
+        // # FIXME: report partial success details (invalid IDs and unauthorized IDs) to improve UX.
         return ResponseEntity.ok(createdAnswers);
     }
 
+    /**
+     * PUT /api/answers/{id}/verify
+     *
+     * Contract:
+     * - Auth: PROFESSOR
+     * - Response: Answer with toggled verified flag
+     * - Status: 200, 401, 403, 404
+     */
     @PutMapping("/{id}/verify")
     @PreAuthorize("hasRole('PROFESSOR')")
     public ResponseEntity<Answer> verifyAnswer(
@@ -186,6 +217,18 @@ public class AnswerController {
         return ResponseEntity.ok(answerRepository.save(answer));
     }
 
+    /**
+     * DELETE /api/answers/{id}
+     *
+     * Contract:
+     * - Auth: PROFESSOR, STUDENT, or ADMIN
+     * - Response: no body
+     * - Status: 200, 401, 403, 404
+     *
+     * Why:
+     * We remove the answer from the in-memory parent collection before delete to prevent
+     * stale managed entities from re-persisting the row through cascading updates.
+     */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('PROFESSOR', 'STUDENT', 'ADMIN')")
     @org.springframework.transaction.annotation.Transactional

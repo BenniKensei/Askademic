@@ -8,6 +8,15 @@ import QuestionsTab from '../components/QuestionsTab';
 import GuideTab from '../components/GuideTab';
 import { ArrowLeft, Bell, MessageCircle, BookOpen, Users } from 'lucide-react';
 
+/**
+ * Course details shell for Q&A, announcements, and grading guide subviews.
+ *
+ * @returns {JSX.Element}
+ *
+ * State rationale:
+ * - activeTab is kept local to avoid route churn when users frequently switch panes.
+ * - course data lives at page level so each tab receives a consistent snapshot.
+ */
 const CourseDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -22,6 +31,8 @@ const CourseDetails = () => {
   const isProfessor = user?.role === 'PROFESSOR';
 
   useEffect(() => {
+    // Why dependency is [id]: data must be reloaded when navigation switches courses
+    // via sidebar/dashboard links while component instance stays mounted.
     fetchCourseDetails();
     // eslint-disable-next-line
   }, [id]);
@@ -32,6 +43,7 @@ const CourseDetails = () => {
     if (tab && ['questions', 'announcements', 'guide'].includes(tab)) {
       setActiveTab(tab);
     }
+    // # TODO: sync tab changes back into URL to improve deep-link sharing.
   }, [searchParams]);
 
   const fetchCourseDetails = async () => {
@@ -41,6 +53,7 @@ const CourseDetails = () => {
     } catch (error) {
       console.error('Failed to fetch course', error);
       setError('Failed to load course details');
+      // # FIXME: provide retry CTA instead of static error-only state.
     } finally {
       setLoading(false);
     }

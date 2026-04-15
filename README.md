@@ -1,232 +1,208 @@
-# 🎓 Askademic - Learning Management Platform
+# Askademic - Learning Management Platform
 
-> A modern, full-stack learning management system featuring real-time Q&A, AI-powered question grouping, course management, and role-based access control.
+> Askademic enables professors and students to run high-signal course Q&A workflows with role-based access, real-time collaboration, and AI-assisted question grouping.
 
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.0-brightgreen.svg)](https://spring.io/projects/spring-boot)
-[![React](https://img.shields.io/badge/React-18-blue.svg)](https://reactjs.org/)
-[![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://www.oracle.com/java/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://www.postgresql.org/)
+[![Build](https://img.shields.io/badge/build-pending-lightgrey)](#)
+[![Tests](https://img.shields.io/badge/tests-pending-lightgrey)](#)
 
 ---
 
-## 🚀 Quick Start (From ZIP Download)
+## I. Executive Summary
 
-### Prerequisites
+Askademic is a full-stack learning management platform designed for universities and technical courses where high question volume can overwhelm instructors. It serves three user types:
 
-Install these before starting:
+- Student: enrolls in courses, posts questions, answers peers, and tracks updates.
+- Professor: creates courses, publishes announcements, answers and verifies questions, and moderates content.
+- Admin: monitors system-level usage and manages platform-wide data.
 
-| Tool | Version | Download |
-|------|---------|----------|
-| **Java** | 17+ | [Download JDK](https://www.oracle.com/java/technologies/downloads/) |
-| **Maven** | 3.9+ | [Download Maven](https://maven.apache.org/download.cgi) |
-| **Node.js** | 16+ | [Download Node.js](https://nodejs.org/) |
-| **Docker** | Latest | [Download Docker](https://www.docker.com/products/docker-desktop/) |
+Core functionality:
 
-### Step-by-Step Setup
+- JWT-based authentication and role-based authorization
+- Course creation and enrollment by code
+- Question and answer lifecycle with verification
+- AI-powered semantic grouping for repeated questions
+- Announcement publishing with student notifications
 
-#### 1️⃣ Extract the ZIP
+---
+
+## II. Architecture & Tech Stack
+
+### Frontend
+
+- React 18
+- React Router
+- Axios
+- Tailwind CSS
+
+### Backend
+
+- Spring Boot 3.2
+- Java 17
+- Spring Security
+- JPA/Hibernate
+
+### Database
+
+- PostgreSQL 15
+- pgvector extension for embedding vectors
+
+### Infrastructure
+
+- Docker Compose for local orchestration
+- Maven for backend build/test
+- npm for frontend build/test
+
+### Data Flow
+
+Client Request -> React Client -> Spring Security Filter Chain -> Controller -> Service Layer -> Repository -> PostgreSQL/pgvector -> JSON Response -> React State Update
+
+### Security Design Notes
+
+- API is stateless and uses bearer JWT tokens.
+- CORS is configured to allow trusted frontend origins only.
+- Authorization checks are enforced at endpoint level and ownership checks are enforced in service/controller logic.
+
+---
+
+## III. Environment Variables
+
+Use environment-specific files or runtime variables. Do not commit real credentials.
+
+| Variable | Required | Scope | Purpose | Dummy Example |
+|---|---|---|---|---|
+| DB_URL | Yes | Backend | JDBC URL for PostgreSQL | jdbc:postgresql://localhost:5431/askademy |
+| DB_USERNAME | Yes | Backend | PostgreSQL username | askademy_user |
+| DB_PASSWORD | Yes | Backend | PostgreSQL password | askademy_password |
+| JWT_SECRET | Yes | Backend | JWT signing key | replace_with_long_random_secret_value |
+| JWT_EXPIRATION_MS | No | Backend | Access token TTL in milliseconds | 86400000 |
+| CORS_ALLOWED_ORIGINS | No | Backend | Allowed web origins | http://localhost:3000 |
+| SPRING_PROFILES_ACTIVE | No | Backend | Runtime profile selector | dev |
+| REACT_APP_API_BASE_URL | No | Frontend | Backend API base URL | http://localhost:8080/api |
+
+---
+
+## IV. Quickstart
+
+### Option A: Docker Compose (database + backend service)
+
 ```bash
-# Unzip the downloaded file
-unzip The_Student_Hub.zip
-cd The_Student_Hub
+git clone https://github.com/BenniKensei/Askademic.git
+cd Askademic
+docker-compose up -d postgres backend
 ```
 
-#### 2️⃣ Start PostgreSQL Database
-```bash
-docker-compose up -d postgres
-```
-> This starts PostgreSQL on port **5433** with the pgvector extension for AI features.
+Start frontend in a second terminal:
 
-#### 3️⃣ Start the Backend
-```bash
-cd backend
-mvn spring-boot:run
-```
-✅ Backend runs on: **http://localhost:8080**
-
-#### 4️⃣ Start the Frontend (new terminal)
 ```bash
 cd frontend
 npm install
 npm start
 ```
-✅ Frontend runs on: **http://localhost:3000**
 
----
+### Option B: Database in Docker, backend/frontend local
 
-## � Demo Accounts
-
-The application starts with pre-registered accounts:
-
-| Role | Email | Password |
-|------|-------|----------|
-| 👨‍🏫 **Professor** | `prof@demo.com` | `password` |
-| 🎓 **Student** | `student@demo.com` | `password` |
-| 🛡️ **Admin** | `admin@demo.com` | `password` |
-
-> **💡 Tip:** Open two browser tabs to test both roles simultaneously. Each tab has its own session.
-
----
-
-## ✨ Features
-
-- 🔐 **JWT Authentication** - Secure login with role-based permissions
-- 📚 **Course Management** - Create courses with unique enrollment codes
-- 💬 **Q&A System** - Ask questions (optionally anonymous), answer, and verify
-- 🤖 **AI Smart Grouping** - Groups similar questions using semantic embeddings
-- 📢 **Announcements** - Push notifications to enrolled students
-- �️ **Admin Dashboard** - View system stats and manage all content
-- �🗑️ **Role-Based Deletion** - Professors can delete their courses, questions, answers
-- 🎨 **Dark Mode** - Neo-brutalist UI with accessibility support
-
----
-
-## 🎮 Using the Application
-
-### As Professor (`prof@demo.com`)
-
-1. **Create a Course** → Click "Create New Course" on dashboard
-2. **Share Course Code** → Give the 8-character code to students
-3. **Post Announcements** → Navigate to course → Announcements tab
-4. **Answer Questions** → View student questions and provide answers
-5. **Verify Answers** → Mark correct answers with verification badge
-6. **AI Grouping** → Toggle "AI Smart Grouping" to batch-answer similar questions
-7. **Delete Content** → Use trash icons on courses, questions, answers, announcements
-
-### As Student (`student@demo.com`)
-
-1. **Enroll in Course** → Enter course code on dashboard
-2. **Ask Questions** → Go to course → Q&A tab → Ask Question
-3. **Answer Peers** → Help fellow students by answering questions
-4. **Check Notifications** → Bell icon shows recent activity
-
-### As Admin (`admin@demo.com`)
-
-1. **Dashboard Overview** → View real-time statistics (User/Course counts)
-2. **Manage Content** → Delete any Course, Question, or Answer/Listing
-3. **User Management** → View all registered users
-
----
-
-## 🗂️ Project Structure
-
-```
-The_Student_Hub/
-├── backend/                 # Spring Boot API
-│   ├── src/main/java/      # Java source code
-│   ├── src/main/resources/ # Configuration files
-│   └── pom.xml             # Maven dependencies
-├── frontend/               # React application
-│   ├── src/components/     # Reusable UI components
-│   ├── src/pages/          # Page components
-│   └── package.json        # npm dependencies
-├── docker-compose.yml      # PostgreSQL container config
-└── docs/                   # Documentation
+```bash
+git clone https://github.com/BenniKensei/Askademic.git
+cd Askademic
+docker-compose up -d postgres
 ```
 
----
-
-## 🧪 Running Tests
+Backend:
 
 ```bash
 cd backend
-mvn test
+mvn spring-boot:run
 ```
 
-Expected output:
-```
-Tests run: 48, Failures: 0, Errors: 0, Skipped: 0
-BUILD SUCCESS
-```
+Frontend:
 
----
-
-## ⚙️ Configuration
-
-### Application Modes
-
-The app automatically loads demo data (sample users, courses, questions) on first run if the database is empty.
-
-To reset to a fresh state:
-```bash
-docker-compose down -v
-docker-compose up -d postgres
-```
-
-### Environment Variables (Optional)
-
-Override defaults by setting these:
-
-```bash
-DB_URL=jdbc:postgresql://localhost:5433/askademy
-DB_USERNAME=askademy_user
-DB_PASSWORD=askademy_password
-JWT_SECRET=your-secret-key-here
-```
-
----
-
-## 🐳 Docker Commands
-
-```bash
-# Start database
-docker-compose up -d postgres
-
-# Stop database
-docker-compose down
-
-# View logs
-docker logs askademy-postgres
-
-# Reset database (delete all data)
-docker-compose down -v
-docker-compose up -d postgres
-```
-
----
-
-## � Troubleshooting
-
-### "Port 8080 already in use"
-```bash
-# Windows
-netstat -ano | findstr :8080
-taskkill /PID <PID> /F
-
-# Mac/Linux
-lsof -i :8080
-kill -9 <PID>
-```
-
-### "Connection refused to database"
-Make sure Docker is running and PostgreSQL container is up:
-```bash
-docker ps
-# Should show "askademy-postgres" container
-```
-
-### "npm install fails"
-Delete `node_modules` and try again:
 ```bash
 cd frontend
-rm -rf node_modules package-lock.json
 npm install
+npm start
+```
+
+Local URLs:
+
+- Frontend: http://localhost:3000
+- Backend: http://localhost:8080
+- PostgreSQL host port: 5431
+
+Friction points to check first:
+
+- Port collision on 3000, 5431, or 8080
+- Docker Desktop not running
+- Wrong API base URL in frontend config
+- Missing JWT_SECRET for non-default environments
+
+---
+
+## V. API Documentation
+
+If OpenAPI/Swagger is enabled in your current profile:
+
+- http://localhost:8080/swagger-ui/index.html
+- http://localhost:8080/v3/api-docs
+
+Core REST endpoints:
+
+| Method | Path | Auth | Request Body | Success Response | Common Status Codes |
+|---|---|---|---|---|---|
+| POST | /api/auth/login | Public | LoginRequest | AuthResponse | 200, 401 |
+| POST | /api/auth/register | Public | RegisterRequest | AuthResponse | 200, 400 |
+| GET | /api/courses | Authenticated | None | List<Course> | 200, 401 |
+| POST | /api/courses | PROFESSOR | CourseRequest | Course | 200, 401, 403 |
+| POST | /api/courses/{id}/enroll | STUDENT | None | Message | 200, 401, 403 |
+| GET | /api/questions/course/{courseId} | PROFESSOR/STUDENT | Query filter optional | List<Question> | 200, 401, 403 |
+| POST | /api/questions | PROFESSOR/STUDENT | QuestionRequest | Question | 200, 400, 401 |
+| GET | /api/questions/grouped/{courseId} | PROFESSOR/STUDENT | Query threshold optional | List<QuestionGroupDto> | 200, 400, 401 |
+| POST | /api/answers | PROFESSOR/STUDENT | AnswerRequest | Answer | 200, 400, 401 |
+| POST | /api/answers/batch | PROFESSOR | BatchAnswerRequest | List<Answer> | 200, 400, 401, 403 |
+| PUT | /api/answers/{id}/verify | PROFESSOR | None | Answer | 200, 401, 403, 404 |
+| GET | /api/admin/stats | ADMIN | None | Map<String,Long> | 200, 401, 403 |
+
+---
+
+## VI. Testing
+
+Backend unit and integration tests:
+
+```bash
+cd backend
+mvn clean test
+```
+
+Frontend component/unit tests:
+
+```bash
+cd frontend
+npm test -- --watchAll=false
+```
+
+Optional full backend verification:
+
+```bash
+cd backend
+mvn verify
 ```
 
 ---
 
-## 🏗️ Tech Stack
+## VII. Known Limitations & Trade-offs
 
-| Layer | Technology |
-|-------|------------|
-| **Backend** | Spring Boot 3.2, Java 17, Spring Security, JPA/Hibernate |
-| **Frontend** | React 18, React Router, Axios, Tailwind CSS |
-| **Database** | PostgreSQL 15 with pgvector extension |
-| **AI** | Sentence embeddings for semantic question grouping |
-| **Auth** | JWT tokens with BCrypt password hashing |
+- JWT secret and expiration handling are partly hard-coded in utility class and should be fully externalized for production hardening.
+- AI grouping quality depends on embedding quality and can vary for short or ambiguous questions.
+- Grouping currently uses greedy clustering, which is fast but may not produce globally optimal clusters.
+- Frontend relies on full refetch after many write operations instead of optimistic updates, which increases API traffic.
+- Some destructive actions use browser confirm dialogs, which are simple but not ideal for accessibility and rich undo workflows.
+- Error handling in some flows returns generic messages; detailed structured error objects are still limited.
 
 ---
 
+## VIII. Contribution Notes
 
+Commenting conventions used in this codebase:
 
-
+- Frontend: JSDoc comments for props, state rationale, and effect dependencies.
+- Backend: endpoint contract comments including method, path, auth, request, response, and status codes.
+- Technical debt tags: use `# TODO:` and `# FIXME:` in code comments.

@@ -4,6 +4,22 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { MessageCircle, CheckCircle, AlertCircle, ChevronRight, Plus, Send, User, Clock, Trash2 } from 'lucide-react';
 
+/**
+ * @typedef {Object} QuestionsTabProps
+ * @property {number} courseId Active course id used for scoped question retrieval.
+ */
+
+/**
+ * Q&A workspace with optional semantic grouping mode.
+ *
+ * @param {QuestionsTabProps} props
+ * @returns {JSX.Element}
+ *
+ * State rationale:
+ * - `questions` and `groupedQuestions` are stored separately so toggle latency stays low.
+ * - selection sets (`expandedGroupIds`, `selectedBatchQuestions`) use Set for O(1)
+ *   membership checks under large groups.
+ */
 const QuestionsTab = ({ courseId }) => {
   const [questions, setQuestions] = useState([]);
   const [groupedQuestions, setGroupedQuestions] = useState([]);
@@ -28,6 +44,8 @@ const QuestionsTab = ({ courseId }) => {
   const isAdmin = user?.role === 'ADMIN';
 
   useEffect(() => {
+    // Why dependencies include smartGrouping:
+    // the same course needs a different backend payload shape when grouping mode changes.
     fetchQuestions();
     // eslint-disable-next-line
   }, [courseId, smartGrouping]);
@@ -48,6 +66,7 @@ const QuestionsTab = ({ courseId }) => {
     } catch (error) {
       console.error('Failed to fetch questions', error);
       setError(smartGrouping ? 'Failed to load grouped questions. AI mode may be disabled.' : 'Failed to load questions');
+      // # FIXME: show actionable recovery guidance when AI mode is disabled at backend level.
     } finally {
       setLoading(false);
     }
@@ -63,6 +82,7 @@ const QuestionsTab = ({ courseId }) => {
     } catch (error) {
       console.error('Failed to create question', error);
       setError('Failed to create question');
+      // # TODO: preserve unsent form input on API failures to avoid user retyping.
     }
   };
 
@@ -109,6 +129,8 @@ const QuestionsTab = ({ courseId }) => {
 
   // Delete question handler (author or professor can delete)
   const handleDeleteQuestion = async (questionId) => {
+    // Why use explicit confirm:
+    // delete cascades to answers, so accidental clicks are expensive for classroom context.
     if (!window.confirm('Are you sure you want to delete this question? This will also delete all answers.')) {
       return;
     }

@@ -34,6 +34,24 @@ public class AuthController {
     @Autowired
     private JwtUtil jwtUtil;
 
+    /**
+     * POST /api/auth/login
+     *
+     * Contract:
+     * - Method: POST
+     * - Path: /api/auth/login
+     * - Auth: Public endpoint
+     * - Request body: LoginRequest { email, password }
+     * - Response: AuthResponse { token, id, email, role }
+     *
+     * Status codes:
+     * - 200 OK: credentials are valid and JWT is issued
+     * - 401 Unauthorized: invalid credentials
+     *
+     * Why:
+     * We return role and user id alongside the token so the frontend can immediately
+     * build role-specific navigation without an extra round-trip to fetch profile data.
+     */
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         try {
@@ -52,6 +70,24 @@ public class AuthController {
         }
     }
 
+    /**
+     * POST /api/auth/register
+     *
+     * Contract:
+     * - Method: POST
+     * - Path: /api/auth/register
+     * - Auth: Public endpoint
+     * - Request body: RegisterRequest { firstName, lastName, email, password, role }
+     * - Response: AuthResponse { token, id, email, role }
+     *
+     * Status codes:
+     * - 200 OK: user registered and authenticated
+     * - 400 Bad Request: duplicate email, invalid role, or validation failure
+     *
+     * Why:
+     * Registration directly issues a JWT to minimize onboarding friction and reduce
+     * drop-off between account creation and first authenticated action.
+     */
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         try {

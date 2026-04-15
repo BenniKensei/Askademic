@@ -26,6 +26,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private UserService userService;
 
+    /**
+     * Middleware contract:
+     * - Reads Authorization: Bearer <token>
+     * - Validates JWT subject + expiration
+     * - Hydrates SecurityContext with authenticated User principal
+     *
+     * Why:
+     * Attaching a domain User principal in the security context allows downstream
+     * controllers/services to perform ownership checks without secondary lookups by token
+     * claims in each endpoint.
+     */
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
             @NonNull FilterChain chain)
@@ -61,6 +72,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
+        // # TODO: implement token revocation/versioning to support forced logout after role changes.
+        // # FIXME: avoid throwing domain exceptions from filter; map auth errors directly to 401 response body.
         chain.doFilter(request, response);
     }
 }

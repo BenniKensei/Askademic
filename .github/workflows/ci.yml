@@ -10,9 +10,27 @@ jobs:
   backend-tests:
     name: Backend Tests
     runs-on: ubuntu-latest
+    
+    # Spin up the pgvector database for Spring Boot to connect to during tests
+    services:
+      postgres:
+        image: pgvector/pgvector:pg15
+        env:
+          POSTGRES_USER: askademy_user
+          POSTGRES_PASSWORD: askademy_password
+          POSTGRES_DB: askademy
+        ports:
+          - 5431:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     defaults:
       run:
         working-directory: backend
+        
     steps:
       - uses: actions/checkout@v4
 
@@ -22,6 +40,12 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
+          
+      - name: Initialize pgvector extension
+        env:
+          PGPASSWORD: askademy_password
+        run: |
+          psql -h localhost -p 5431 -U askademy_user -d askademy -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
       - name: Run tests
         run: mvn test -B --no-transfer-progress

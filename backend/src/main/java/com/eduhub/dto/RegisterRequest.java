@@ -18,8 +18,7 @@ public class RegisterRequest {
 
     private String lastName; // Optional
 
-    @NotBlank(message = "Role is required")
-    private String role; // STUDENT, PROFESSOR, ADMIN
+    private String role; // Optional — ignored by server, role is resolved from email domain
 
     // Getters and Setters
     public String getEmail() { return email; }

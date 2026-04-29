@@ -11,6 +11,7 @@ import com.eduhub.model.Role;
 import com.eduhub.model.User;
 import com.eduhub.repository.UserRepository;
 import com.eduhub.security.JwtUtil;
+import com.eduhub.util.RoleResolver;
 
 @Service
 public class UserService {
@@ -63,6 +64,12 @@ public class UserService {
             throw new RuntimeException("User already exists");
         }
 
+        // Resolve role from email domain
+        Role resolvedRole = RoleResolver.fromEmail(request.getEmail());
+        if (resolvedRole == null) {
+            throw new RuntimeException("Only university emails are allowed (@e-uvt.ro for students, @uvt.ro for professors)");
+        }
+
         // Extract names from email if not provided
         String firstName = request.getFirstName();
         String lastName = request.getLastName();
@@ -79,7 +86,7 @@ public class UserService {
             lastName,
             request.getEmail(),
             passwordEncoder.encode(request.getPassword()),
-            Role.valueOf(request.getRole().toUpperCase())
+            resolvedRole
         );
 
         // Save user

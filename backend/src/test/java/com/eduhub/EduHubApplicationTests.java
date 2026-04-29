@@ -111,13 +111,12 @@ class EduHubApplicationTests {
     void testRegisterUser() {
         // Given: Registration request and mocked dependencies
         RegisterRequest request = new RegisterRequest();
-        request.setEmail("newuser@example.com");
+        request.setEmail("jane.doe@e-uvt.ro");
         request.setPassword("password123");
         request.setFirstName("Jane");
         request.setLastName("Doe");
-        request.setRole("STUDENT");
 
-        User savedUser = new User(1, "Jane", "Doe", "newuser@example.com", "hashedPass", Role.STUDENT);
+        User savedUser = new User(1, "Jane", "Doe", "jane.doe@e-uvt.ro", "hashedPass", Role.STUDENT);
         String expectedToken = "jwt.token.here";
 
         // Mock behavior
@@ -133,7 +132,7 @@ class EduHubApplicationTests {
         assertNotNull(token, "Token should not be null");
         assertEquals(expectedToken, token, "Token should match expected value");
         
-        verify(userRepository, times(1)).findByEmail("newuser@example.com");
+        verify(userRepository, times(1)).findByEmail("jane.doe@e-uvt.ro");
         verify(passwordEncoder, times(1)).encode("password123");
         verify(userRepository, times(1)).save(any(User.class));
         verify(jwtUtil, times(1)).generateToken(anyString(), anyString(), any(Integer.class));

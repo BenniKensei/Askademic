@@ -15,8 +15,10 @@ import com.eduhub.model.Course;
 import com.eduhub.model.Role;
 import com.eduhub.model.User;
 import com.eduhub.repository.CourseRepository;
-
 import com.eduhub.repository.UserRepository;
+import com.eduhub.repository.AnswerRepository;
+import com.eduhub.model.Answer;
+import com.eduhub.model.Question;
 
 @Component
 @org.springframework.context.annotation.Profile("demo")
@@ -36,36 +38,39 @@ public class DemoDataLoader implements CommandLineRunner {
         @Autowired
         private PasswordEncoder passwordEncoder;
 
+        @Autowired
+        private AnswerRepository answerRepository;
+
         @Override
         public void run(String... args) throws Exception {
                 // Always check if demo data exists and create it if missing
                 // This ensures new installations have sample data to work with
 
                 // Check if admin user exists, create if not (independent of other demo data)
-                if (userRepository.findByEmail("admin@demo.com").isEmpty()) {
+                if (userRepository.findByEmail("admin@uvt.ro").isEmpty()) {
                         logger.info("Creating admin user...");
-                        User admin = new User(null, "Admin", "User", "admin@demo.com",
+                        User admin = new User(null, "Admin", "User", "admin@uvt.ro",
                                         passwordEncoder.encode("password"),
                                         Role.ADMIN);
                         userRepository.save(admin);
-                        logger.info("Admin account created: admin@demo.com");
+                        logger.info("Admin account created: admin@uvt.ro");
                 }
 
-                if (userRepository.findByEmail("prof@demo.com").isPresent()) {
+                if (userRepository.findByEmail("prof.demo@uvt.ro").isPresent()) {
                         logger.info("Demo data already exists in database");
-                        logger.info("Demo accounts: prof@demo.com / student@demo.com / admin@demo.com (password: 'password')");
+                        logger.info("Demo accounts: prof.demo@uvt.ro / student.demo@e-uvt.ro / admin@uvt.ro (password: 'password')");
                         return;
                 }
 
                 logger.info("=== Creating demo data ===");
 
                 // Create users and course
-                User professor = new User(null, "Professor", "Demo", "prof@demo.com",
+                User professor = new User(null, "Professor", "Demo", "prof.demo@uvt.ro",
                                 passwordEncoder.encode("password"),
                                 Role.PROFESSOR);
                 professor = userRepository.save(professor);
 
-                User student = new User(null, "Student", "Demo", "student@demo.com", passwordEncoder.encode("password"),
+                User student = new User(null, "Student", "Demo", "student.demo@e-uvt.ro", passwordEncoder.encode("password"),
                                 Role.STUDENT);
                 student = userRepository.save(student);
 
@@ -105,9 +110,10 @@ public class DemoDataLoader implements CommandLineRunner {
 
         private void generateSampleQuestions(Course course, User student, User professor) {
                 // Group 1: Inheritance-related (should cluster together with high similarity)
-                createQuestion("What is inheritance in OOP?",
+                Question q1 = createQuestion("What is inheritance in OOP?",
                                 "I need help understanding inheritance basics. How does it work?",
                                 course, student);
+                answerQuestion(q1, "Inheritance is a mechanism wherein a new class is derived from an existing class. In Java, classes may inherit or acquire the properties and methods of other classes.", professor, true);
 
                 createQuestion("Explain inheritance in object oriented programming",
                                 "How does class inheritance work? When should I use it?",
@@ -118,9 +124,10 @@ public class DemoDataLoader implements CommandLineRunner {
                                 course, student);
 
                 // Group 2: Polymorphism-related (should cluster together)
-                createQuestion("Polymorphism examples in Java",
+                Question q2 = createQuestion("Polymorphism examples in Java",
                                 "Looking for real-world polymorphism examples with code",
                                 course, student);
+                answerQuestion(q2, "Polymorphism means 'many forms', and it occurs when we have many classes that are related to each other by inheritance. For instance, an Animal class with a makeSound() method overridden by Dog and Cat classes.", professor, true);
 
                 createQuestion("How does polymorphism work?",
                                 "Explain runtime polymorphism vs compile-time polymorphism",
@@ -139,11 +146,18 @@ public class DemoDataLoader implements CommandLineRunner {
                                 "Which build tool should I use for my Java project?",
                                 course, professor);
 
-                logger.info("✅ Sample questions created successfully");
+                logger.info("✅ Sample questions and answers created successfully");
         }
 
-        private void createQuestion(String title, String content, Course course, User author) {
-                questionService.createQuestionDirect(title, content, author, course, false);
+        private Question createQuestion(String title, String content, Course course, User author) {
+                Question q = questionService.createQuestionDirect(title, content, author, course, false);
                 logger.info("Created question: {}", title);
+                return q;
+        }
+
+        private void answerQuestion(Question question, String content, User author, boolean verified) {
+                Answer a = new Answer(content, author, question);
+                a.setVerified(verified);
+                answerRepository.save(a);
         }
 }

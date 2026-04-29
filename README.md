@@ -2,8 +2,7 @@
 
 > Askademic enables professors and students to run high-signal course Q&A workflows with role-based access, real-time collaboration, and AI-assisted question grouping.
 
-[![Build](https://img.shields.io/badge/build-pending-lightgrey)](#)
-[![Tests](https://img.shields.io/badge/tests-pending-lightgrey)](#)
+[![CI](https://github.com/BenniKensei/Askademic/actions/workflows/ci.yml/badge.svg)](https://github.com/BenniKensei/Askademic/actions/workflows/ci.yml)
 
 ---
 
@@ -22,6 +21,35 @@ Core functionality:
 - Question and answer lifecycle with verification
 - AI-powered semantic grouping for repeated questions
 - Announcement publishing with student notifications
+
+---
+
+## Screenshots
+
+### Login
+JWT-authenticated sign-in with email and password.
+
+![Login](docs/screenshots/login.png)
+
+### Registration
+Email-based role detection — `@e-uvt.ro` registers as Student, `@uvt.ro` as Professor. Non-university emails are rejected.
+
+![Register](docs/screenshots/register.png)
+
+### Professor Dashboard
+Course management hub with real-time stats for verified answers and pending questions.
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+### AI-Assisted Q&A
+Questions with similar semantic meaning are automatically grouped using vector embeddings, allowing professors to answer multiple related questions simultaneously.
+
+![AI Question Grouping](docs/screenshots/ai_grouping.png)
+
+### Admin Panel (Dark Mode)
+Platform-wide analytics — total users, courses, questions, and answers at a glance.
+
+![Admin Dashboard](docs/screenshots/admin_dark_mode.png)
 
 ---
 

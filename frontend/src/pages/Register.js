@@ -1,19 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { UserPlus, Mail, Lock, AlertCircle, CheckCircle, GraduationCap, BookOpen, X } from 'lucide-react';
+import { UserPlus, Mail, Lock, AlertCircle, CheckCircle, GraduationCap, BookOpen, X, ShieldAlert } from 'lucide-react';
+
+/**
+ * Resolves role from email domain (mirrors backend RoleResolver).
+ * @param {string} email
+ * @returns {{ role: string|null, label: string, color: string }}
+ */
+const resolveRoleFromEmail = (email) => {
+  if (!email || !email.includes('@')) {
+    return { role: null, label: '', color: '' };
+  }
+  const domain = email.substring(email.indexOf('@') + 1).toLowerCase();
+  if (domain === 'e-uvt.ro') {
+    return { role: 'STUDENT', label: 'Student', color: 'emerald' };
+  }
+  if (domain === 'uvt.ro') {
+    return { role: 'PROFESSOR', label: 'Professor', color: 'rose' };
+  }
+  return { role: 'REJECTED', label: 'Not a university email', color: 'red' };
+};
 
 const Register = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    role: 'STUDENT'
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+
+  const emailRole = useMemo(() => resolveRoleFromEmail(formData.email), [formData.email]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -49,13 +69,13 @@ const Register = () => {
       setLoading(false);
       return;
     }
-    if (!formData.role) {
-      setError('Please select a role');
+    if (emailRole.role === 'REJECTED' || emailRole.role === null) {
+      setError('Only university emails are allowed (@e-uvt.ro for students, @uvt.ro for professors)');
       setLoading(false);
       return;
     }
 
-    const result = await register(formData);
+    const result = await register({ email: formData.email, password: formData.password });
     if (result.success) {
       setSuccess(true);
       // Show success message for 2 seconds then redirect to login
@@ -80,7 +100,7 @@ const Register = () => {
             </div>
             <h2 className="text-4xl font-black text-slate-900 uppercase">Create Account</h2>
             <p className="mt-2 text-sm font-bold text-slate-900">
-              Join Askademic today
+              Join Askademic with your university email
             </p>
           </div>
 
@@ -115,7 +135,7 @@ const Register = () => {
             <div className="space-y-4">
               <div>
                 <label htmlFor="email" className="block text-sm font-black text-slate-900 mb-2 uppercase tracking-wide">
-                  Email Address
+                  University Email
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -127,11 +147,35 @@ const Register = () => {
                     type="email"
                     autoComplete="email"
                     className="appearance-none block w-full pl-10 px-4 py-3 border-4 border-slate-900 rounded-xl placeholder-slate-400 text-slate-900 font-bold focus:outline-none focus:ring-4 focus:ring-cyan-400"
-                    placeholder="you@example.com"
+                    placeholder="name@e-uvt.ro"
                     value={formData.email}
                     onChange={handleChange}
                   />
                 </div>
+
+                {/* Dynamic role badge based on email domain */}
+                {formData.email.includes('@') && (
+                  <div className="mt-3">
+                    {emailRole.role === 'STUDENT' && (
+                      <div className="flex items-center gap-2 px-4 py-2 bg-emerald-400 border-4 border-slate-900 rounded-xl shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
+                        <BookOpen className="w-5 h-5 text-slate-900" />
+                        <span className="text-sm font-black text-slate-900 uppercase">Student Account</span>
+                      </div>
+                    )}
+                    {emailRole.role === 'PROFESSOR' && (
+                      <div className="flex items-center gap-2 px-4 py-2 bg-rose-400 border-4 border-slate-900 rounded-xl shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
+                        <GraduationCap className="w-5 h-5 text-slate-900" />
+                        <span className="text-sm font-black text-slate-900 uppercase">Professor Account</span>
+                      </div>
+                    )}
+                    {emailRole.role === 'REJECTED' && (
+                      <div className="flex items-center gap-2 px-4 py-2 bg-amber-300 border-4 border-slate-900 rounded-xl shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
+                        <ShieldAlert className="w-5 h-5 text-slate-900" />
+                        <span className="text-sm font-black text-slate-900 uppercase">University email required</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -140,7 +184,7 @@ const Register = () => {
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-slate-900" />
+                    <Lock className="h-5 h-5 text-slate-900" />
                   </div>
                   <input
                     id="password"
@@ -155,42 +199,11 @@ const Register = () => {
                 </div>
                 <p className="mt-2 text-xs font-bold text-slate-600">Must be at least 6 characters</p>
               </div>
-
-              <div>
-                <label className="block text-sm font-black text-slate-900 mb-3 uppercase tracking-wide">
-                  I am a
-                </label>
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, role: 'STUDENT' })}
-                    className={`flex flex-col items-center gap-3 p-6 rounded-xl border-4 border-slate-900 transition-all ${formData.role === 'STUDENT'
-                      ? 'bg-emerald-400 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] translate-x-1 translate-y-1'
-                      : 'bg-white hover:bg-slate-50 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)]'
-                      }`}
-                  >
-                    <BookOpen className="w-8 h-8 text-slate-900" />
-                    <span className="text-sm font-black text-slate-900 uppercase">Student</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, role: 'PROFESSOR' })}
-                    className={`flex flex-col items-center gap-3 p-6 rounded-xl border-4 border-slate-900 transition-all ${formData.role === 'PROFESSOR'
-                      ? 'bg-rose-400 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] translate-x-1 translate-y-1'
-                      : 'bg-white hover:bg-slate-50 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)]'
-                      }`}
-                  >
-                    <GraduationCap className="w-8 h-8 text-slate-900" />
-                    <span className="text-sm font-black text-slate-900 uppercase">Professor</span>
-                  </button>
-                </div>
-              </div>
             </div>
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || emailRole.role === 'REJECTED' || emailRole.role === null}
               className="w-full flex justify-center items-center gap-2 py-4 px-4 border-4 border-slate-900 rounded-xl text-lg font-black text-white bg-slate-900 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)]"
             >
               {loading ? (

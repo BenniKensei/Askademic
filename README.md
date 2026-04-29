@@ -29,27 +29,27 @@ Core functionality:
 ### Login
 JWT-authenticated sign-in with email and password.
 
-![Login](docs/screenshots/login.png)
+<img src="docs/screenshots/login.png" width="400">
 
 ### Registration
 Email-based role detection — `@e-uvt.ro` registers as Student, `@uvt.ro` as Professor. Non-university emails are rejected.
 
-![Register](docs/screenshots/register.png)
+<img src="docs/screenshots/register.png" width="400">
 
 ### Professor Dashboard
 Course management hub with real-time stats for verified answers and pending questions.
 
-![Dashboard](docs/screenshots/dashboard.png)
+<img src="docs/screenshots/dashboard.png" width="600">
 
 ### AI-Assisted Q&A
 Questions with similar semantic meaning are automatically grouped using vector embeddings, allowing professors to answer multiple related questions simultaneously.
 
-![AI Question Grouping](docs/screenshots/ai_grouping.png)
+<img src="docs/screenshots/ai_grouping.png" width="600">
 
 ### Admin Panel (Dark Mode)
 Platform-wide analytics — total users, courses, questions, and answers at a glance.
 
-![Admin Dashboard](docs/screenshots/admin_dark_mode.png)
+<img src="docs/screenshots/admin_dark_mode.png" width="600">
 
 ---
 
